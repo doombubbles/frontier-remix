@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <RootNamespace>FrontierRemix</RootNamespace>
+        <Configurations>Debug;Release</Configurations>
+        <Nullable>enable</Nullable>
+        <AssemblyName>FrontierRemix</AssemblyName>
+        <LangVersion>preview</LangVersion>
+        <Optimize>False</Optimize>
+        <DebugType>embedded</DebugType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include=".github\workflows\build.yml" />
+    </ItemGroup>
+
+    <Import Project="..\btd6.targets" />
+</Project>
