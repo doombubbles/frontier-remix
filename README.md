@@ -14,7 +14,7 @@ Adds some Quality of Life changes to Frontier Legends.
 - Press Space to toggle Freecam Mode in the Frontier Map
   - Click to pan around, Scroll Wheel to zoom in / out
 - Use F1-F4 to Fast Forward within the Frontier Map
-  - Speeds are 1x, 2x, 3x, 5x
+  - Speeds are 1x, 1.5x, 2x, 3x
 - Auto walk to nearest campfire by clicking the campfire button twice
 
 See the Mod Settings page for customization.
