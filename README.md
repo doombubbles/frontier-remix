@@ -15,6 +15,8 @@ Adds some Quality of Life changes to Frontier Legends.
   - Click to pan around, Scroll Wheel to zoom in / out
 - Use F1-F4 to Fast Forward within the Frontier Map
   - Default speeds are 1x, 1.5x, 2x, 3x
+- Press M to open the Frontier Fast Travel Map from any location
+- Auto Fishing toggle on the Fishing screen
 - Auto walk to nearest campfire by clicking the campfire button twice
 
 See the Mod Settings page for customization.

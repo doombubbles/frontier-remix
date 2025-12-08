@@ -2,10 +2,19 @@ global using BTD_Mod_Helper.Extensions;
 using System;
 using MelonLoader;
 using BTD_Mod_Helper;
+using BTD_Mod_Helper.Api;
+using BTD_Mod_Helper.Api.Components;
+using BTD_Mod_Helper.Api.Enums;
 using FrontierRemix;
 using BTD_Mod_Helper.Api.ModOptions;
 using HarmonyLib;
+using Il2Cpp;
+using Il2CppAssets.Scripts.Data.Legends;
+using Il2CppAssets.Scripts.Unity;
+using Il2CppAssets.Scripts.Unity.Menu;
 using Il2CppAssets.Scripts.Unity.UI_New.Legends;
+using Il2CppAssets.Scripts.Unity.UI_New.Popups;
+using Il2CppNinjaKiwi.Common.ResourceUtils;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -24,6 +33,11 @@ public class FrontierRemixMod : BloonsTD6Mod
     private static readonly ModSettingHotkey FreeCamKey = new(KeyCode.Space)
     {
         description = "Keybinding to toggle Free Cam mode in the Frontier Legends map."
+    };
+
+    public static readonly ModSettingHotkey MapHotkey = new(KeyCode.M)
+    {
+        description = "Open up the Frontier Fast travel map from anywhere"
     };
 
     private static readonly ModSettingHotkey FrontierSpeedReset = new(KeyCode.F1)
@@ -64,14 +78,31 @@ public class FrontierRemixMod : BloonsTD6Mod
     public static float Speed { get; private set; } = 1;
 
     /// <summary>
-    /// Switch Speed on hotkey
+    /// Main hotkeys
     /// </summary>
     [HarmonyPatch(typeof(FrontierMap), nameof(FrontierMap.Update))]
     internal static class FrontierMap_Update
     {
         [HarmonyPostfix]
-        internal static void Postfix()
+        internal static void Postfix(FrontierMap __instance)
         {
+            if (MapHotkey.JustPressed() && !PopupScreen.instance.IsPopupActive())
+            {
+                if (MenuManager.instance.IsMenuOpenOrOpening("FrontierFastTravelUI"))
+                {
+                    MenuManager.instance.ForceCloseMenu("FrontierFastTravelUI", true);
+                }
+                else
+                {
+                    MenuManager.instance.OpenMenu("FrontierFastTravelUI");
+                }
+                Game.instance.audioFactory.PlaySound(
+                    new AudioClipReference(VanillaAudioClips.BuildingEnterNoticeboard01), "EnterBuildingSound",
+                    volume: 0.5f);
+            }
+
+            __instance.lootDuration = 2 / Math.Max(Speed, 1);
+
             try
             {
                 if (FrontierSpeedReset.JustPressed() && !Mathf.Approximately(Speed, 1))
@@ -126,7 +157,7 @@ public class FrontierRemixMod : BloonsTD6Mod
         [HarmonyPostfix]
         internal static void Postfix(LegendsMapCameraRig __instance)
         {
-            if (!FreeCamKey.JustPressed()) return;
+            if (!FreeCamKey.JustPressed() || PopupScreen.instance.IsPopupActive()) return;
 
             switch (__instance.selectedCameraSettings?.settingsName)
             {
@@ -191,6 +222,102 @@ public class FrontierRemixMod : BloonsTD6Mod
             {
                 __instance.frontierMap.TryWalkToCampfire();
             }
+        }
+    }
+
+    private static bool autoFish;
+
+    /// <summary>
+    /// Add Auto Fish toggle
+    /// </summary>
+    [HarmonyPatch(typeof(FrontierFishingMinigame), nameof(FrontierFishingMinigame.Awake))]
+    internal static class FrontierFishingMinigame_Awake
+    {
+        [HarmonyPostfix]
+        internal static void Postfix(FrontierFishingMinigame __instance)
+        {
+            var toggle = __instance.gameObject.AddModHelperComponent(ModHelperCheckbox.Create(new Info("AutoFish", 150)
+            {
+                X = -175, Y = 175, Anchor = new Vector2(1, 0)
+            }, autoFish, VanillaSprites.FrontierMainPanelBlack, new Action<bool>(b =>
+            {
+                autoFish = b;
+            })));
+            toggle.AddText(new Info("Label", 300, 100)
+            {
+                Y = -36, Anchor = new Vector2(0.5f, 0),
+            }, "Auto Fish", 60);
+        }
+    }
+
+    /// <summary>
+    /// Auto Fish collecting fish
+    /// </summary>
+    [HarmonyPatch(typeof(FrontierFishingMinigame), nameof(FrontierFishingMinigame.Update))]
+    internal static class FrontierFishingMinigame_Update
+    {
+
+        [HarmonyPrefix]
+        internal static void Prefix(FrontierFishingMinigame __instance)
+        {
+            if (autoFish)
+            {
+                __instance.hitBtnHeld = __instance.targetPos > __instance.t;
+
+                InputSystemController_GetMouseButtonDown.overrideMouse = __instance.map.frontierMap.lootSequenceRunning;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Auto Fish restarting fishing
+    /// </summary>
+    [HarmonyPatch(typeof(FrontierFishingMinigame), nameof(FrontierFishingMinigame.IdleState))]
+    internal static class FrontierFishingMinigame_IdleState
+    {
+        [HarmonyPostfix]
+        internal static void Postfix(FrontierFishingMinigame __instance)
+        {
+            if (autoFish)
+            {
+                TaskScheduler.ScheduleTask(__instance.StartWaitingAsync, ScheduleType.WaitForSecondsScaled, 1);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Auto Fish console message
+    /// </summary>
+    [HarmonyPatch(typeof(FrontierFishLootDisplay), nameof(FrontierFishLootDisplay.Bind))]
+    internal static class FrontierFishLootDisplay_Bind
+    {
+        [HarmonyPostfix]
+        internal static void Postfix(FrontierLoot loot)
+        {
+            if (autoFish && loot.Is(out FrontierFishingLoot fishingLoot))
+            {
+                ModHelper.Msg<FrontierRemixMod>(
+                    $"Caught {fishingLoot.GetLootNameLocKey().Localize()}! Weight: {fishingLoot.weight:F2} Value: {fishingLoot.value}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Auto Fish skip loot display
+    /// </summary>
+    [HarmonyPatch(typeof(InputSystemController), nameof(InputSystemController.GetMouseButtonDown))]
+    internal static class InputSystemController_GetMouseButtonDown
+    {
+        internal static bool overrideMouse;
+
+        [HarmonyPostfix]
+        internal static void Postfix(ref bool __result)
+        {
+            if (autoFish && overrideMouse)
+            {
+                __result = true;
+            }
+            overrideMouse = false;
         }
     }
 }

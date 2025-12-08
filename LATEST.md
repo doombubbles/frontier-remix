@@ -1,1 +1,3 @@
-- Initial Release
+- You can now press M to open the Frontier Fast Travel Map from any location
+- Added an Auto Fishing toggle on the Fishing screen
+- Durations of loot popups are now affected by fast forwarding
