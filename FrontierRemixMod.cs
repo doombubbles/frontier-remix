@@ -2,7 +2,6 @@ global using BTD_Mod_Helper.Extensions;
 using System;
 using MelonLoader;
 using BTD_Mod_Helper;
-using BTD_Mod_Helper.Api;
 using BTD_Mod_Helper.Api.Components;
 using BTD_Mod_Helper.Api.Enums;
 using FrontierRemix;
@@ -15,8 +14,11 @@ using Il2CppAssets.Scripts.Unity.Menu;
 using Il2CppAssets.Scripts.Unity.UI_New.Legends;
 using Il2CppAssets.Scripts.Unity.UI_New.Popups;
 using Il2CppNinjaKiwi.Common.ResourceUtils;
+using Il2CppSystem.Collections.Generic;
+using Il2CppSystem.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using TaskScheduler = BTD_Mod_Helper.Api.TaskScheduler;
 
 [assembly: MelonInfo(typeof(FrontierRemixMod), ModHelperData.Name, ModHelperData.Version, ModHelperData.RepoOwner)]
 [assembly: MelonGame("Ninja Kiwi", "BloonsTD6")]
@@ -220,7 +222,12 @@ public class FrontierRemixMod : BloonsTD6Mod
         {
             if (__instance.frontierMap.runningHighlightPathTask != null)
             {
-                __instance.frontierMap.TryWalkToCampfire();
+                __instance.frontierMap.GetPathToCampfire().ContinueWith(new Action<Task>(t =>
+                {
+                    var result = t.Cast<Task<List<LegendsTile>>>().Result;
+                    if (!result.Any()) return;
+                    __instance.frontierMap.GetPlayerNav().TravelAlongPathSequenceAsync(result, result.First());
+                }));
             }
         }
     }
