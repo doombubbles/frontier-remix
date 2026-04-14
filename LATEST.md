@@ -1,1 +1,1 @@
-- Fixed for v54
+- Fixed 54.1 auto fishing not restarting if a fish got away

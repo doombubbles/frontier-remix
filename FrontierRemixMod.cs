@@ -1,5 +1,6 @@
 global using BTD_Mod_Helper.Extensions;
 using System;
+using System.Reflection;
 using MelonLoader;
 using BTD_Mod_Helper;
 using BTD_Mod_Helper.Api.Components;
@@ -279,9 +280,15 @@ public class FrontierRemixMod : BloonsTD6Mod
     /// <summary>
     /// Auto Fish restarting fishing
     /// </summary>
-    [HarmonyPatch(typeof(FrontierFishingMinigame), nameof(FrontierFishingMinigame.IdleState))]
+    [HarmonyPatch]
     internal static class FrontierFishingMinigame_IdleState
     {
+        private static System.Collections.Generic.IEnumerable<MethodBase> TargetMethods() =>
+        [
+            AccessTools.Method(typeof(FrontierFishingMinigame), nameof(FrontierFishingMinigame.IdleState)),
+            AccessTools.Method(typeof(FrontierFishingMinigame), nameof(FrontierFishingMinigame.LoseGame))
+        ];
+
         [HarmonyPostfix]
         internal static void Postfix(FrontierFishingMinigame __instance)
         {
