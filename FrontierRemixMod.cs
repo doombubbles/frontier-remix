@@ -23,6 +23,7 @@ using TaskScheduler = BTD_Mod_Helper.Api.TaskScheduler;
 
 [assembly: MelonInfo(typeof(FrontierRemixMod), ModHelperData.Name, ModHelperData.Version, ModHelperData.RepoOwner)]
 [assembly: MelonGame("Ninja Kiwi", "BloonsTD6")]
+[assembly: MelonGame("Ninja Kiwi", "BloonsTD6-Epic")]
 
 namespace FrontierRemix;
 

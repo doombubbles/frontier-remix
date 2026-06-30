@@ -17,7 +17,8 @@ public static class ModHelperData
         """;
 
     public const string RepoOwner = "doombubbles";
-    public const string RepoName = "frontier-remix";
+    public const string PrevRepoName = "frontier-remix";
+    public const string RepoName = "FrontierRemix";
 
     public const bool SquareIcon = true;
 }
